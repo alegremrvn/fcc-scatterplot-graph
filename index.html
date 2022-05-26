@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>D3 Scatterplot Graph</title>
+    <meta charset="utf-8">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+      svg {
+        background-color: #eeeee4;
+      }
+      .dot {
+        fill: black;
+      }
+    </style>
+  </head>
+
+  <body>
+    <script src="https://cdn.freecodecamp.org/testable-projects-fcc/v1/bundle.js"></script>
+
+    <!-- Loading of the dataset. -->
+    <script>
+      const req = new XMLHttpRequest()
+      req.open("GET","https://raw.githubusercontent.com/freeCodeCamp/ProjectReferenceData/master/cyclist-data.json",true)
+      req.send()
+      let dataset
+      req.onload = function() {
+        dataset = JSON.parse(req.responseText)
+      }
+    </script>
+
+    <h1 id="title">Doping in Professional Bicycle Racing</h1>
+
+    <!-- A delay was introduced to not hardcode the data. -->
+    <script>
+      setTimeout(() => {
+        const w = 800
+        const h = 500
+        const padding = 50
+        let svg = d3.select("body")
+          .append("svg")
+            .attr("width",w + 2 * padding)
+            .attr("height",h + 2 * padding)
+
+        const yScale = d3.scaleTime()
+          .domain(d3.extent(dataset,(d) => d3.timeParse("%M:%S")(d.Time)))
+          .range([0,h])
+        const yAxis = d3.axisLeft(yScale)
+          .tickFormat(d3.timeFormat("%M:%S"))
+        svg.append("g")
+          .attr("transform","translate(" + padding + "," + padding + ")")
+          .attr("id","y-axis")
+          .call(yAxis)
+        
+        const xScale = d3.scaleTime()
+          .domain(d3.extent(dataset,(d) => new Date(d.Year.toString())))
+          .range([0,w])
+        const xAxis = d3.axisBottom(xScale)
+        svg.append("g")
+          .attr("transform","translate(" + padding + "," + (padding + h) + ")")
+          .attr("id","x-axis")
+          .call(xAxis)
+
+        const handleMouseleave = function(event) {
+          d3.selectAll("#tooltip")
+            .remove()
+        }
+
+        const handleMouseover = function(event) {
+          d3.select(this)
+            .on("mouseleave",handleMouseleave)
+
+          const thisX = d3.select(this)
+            .attr("cx")
+          const thisY = d3.select(this)
+            .attr("cy")
+
+          const thisDataDate = d3.select(this)
+            .attr("data-xvalue")
+          
+          svg.append("text")
+          .attr("x",thisX)
+          .attr("y",thisY)
+          .attr("id","tooltip")
+          .attr("data-year",thisDataDate)
+          .text(thisDataDate)
+        }
+
+        svg.selectAll("circle")
+          .data(dataset)
+          .enter()
+          .append("circle")
+            .attr("class","dot")
+            .attr("cx",(d) => padding + xScale(new Date(d.Year.toString())))
+            .attr("cy",(d) => padding + yScale(d3.timeParse("%M:%S")(d.Time)))
+            .attr("r",5)
+            .attr("data-xvalue",(d) => d.Year)
+            .attr("data-yvalue",(d) => d3.timeParse("%M:%S")(d.Time))
+          .on("mouseover",handleMouseover)
+
+        svg.append("g")
+          .attr("id","legend")
+      },1000)
+    </script>
+  </body>
+</html>
